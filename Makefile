@@ -24,7 +24,7 @@ LIBS	=
 CFLAGS	=	-Os -Werror -W -Wall
 LDFLAGS	=
 
-OBJS	=	bdf2c.o
+OBJS	=	ppmhdr.o bdf2c.o
 HDRS	=	
 FILES	=	Makefile AGPL-3.0.txt README.txt Changelog.txt
 
