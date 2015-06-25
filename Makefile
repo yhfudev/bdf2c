@@ -21,7 +21,7 @@
 
 CC	=	gcc
 LIBS	=	
-CFLAGS	=	-Os -Werror -W -Wall
+CFLAGS	=	-g -Werror -W -Wall #-Os
 LDFLAGS	=
 
 OBJS	=	ppmhdr.o bdf2c.o
@@ -49,10 +49,10 @@ indent:
 	done
 
 clean:
-	-rm *.o *~
+	-rm -f *.o *~
 
 clobber:	clean
-	-rm bdf2c
+	-rm -f bdf2c
 
 dist:
 	tar cjCf .. bdf2c-`date +%F-%H`.tar.bz2 \

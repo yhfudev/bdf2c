@@ -79,6 +79,10 @@
 #include <limits.h>
 #include <errno.h>
 
+#include <assert.h>
+
+#include "ppmhdr.h"
+
 #define VERSION "4"			///< version of this application
 
 //////////////////////////////////////////////////////////////////////////////
@@ -203,6 +207,7 @@ void Footer(FILE * out, const char *name, int width, int height, int chars)
     fprintf(out, "};\n\n");
 }
 
+
 ///
 ///	Dump character.
 ///
@@ -268,6 +273,8 @@ void DumpCharacter(FILE * out, unsigned char *bitmap, int width, int height)
     }
 }
 
+
+
 ///
 ///	Hex ascii to integer
 ///
@@ -286,33 +293,57 @@ static inline int Hex2Int(const char *p)
     }
 }
 
-///
-///	Rotate bitmap.
-///
-///	@param bitmap	input bitmap
-///	@param shift	rotate counter (0-7)
-///	@param width	character width
-///	@param height	character height
-///
-void RotateBitmap(unsigned char *bitmap, int shift, int width, int height)
-{
-    int x;
-    int y;
-    int c;
-    int o;
+extern void RotateBitmap(uint8_t *bitmap, int shift, int width, int height);
 
-    if (shift < 0 || shift > 7) {
-	fprintf(stderr, "This shift isn't supported\n");
-	exit(-1);
+#define BITSZ_OF(a) (sizeof (a) * 8)
+void RotateBitmap(uint8_t *bitmap, int shift, int width, int height)
+{
+    int y;
+
+    if ((shift <= 0) || (shift >= width)) {
+        fprintf(stderr, "Waring: This shift isn't supported: w=%d,h=%d, shift=%2d; ignored!!\n", shift, width, height);
+        return;
     }
+#if DEBUG
+    // debug
+    if ((size_t)shift >= BITSZ_OF (uint8_t)) {
+        fprintf(stderr, "Waring: This shift: w=%d,h=%d, shift=%2d\n", width, height, shift);
+    }
+#endif
+
+    uint8_t * p0;
+    uint8_t * p1;
+    uint8_t * p2;
+    uint8_t val;
+    size_t byteshift;
+    byteshift = shift % BITSZ_OF (uint8_t);
 
     for (y = 0; y < height; ++y) {
-	o = 0;
-	for (x = 0; x < width; x += 8) {
-	    c = bitmap[y * ((width + 7) / 8) + x / 8];
-	    bitmap[y * ((width + 7) / 8) + x / 8] = c >> shift | o;
-	    o = c << (8 - shift);
-	}
+        p0 = &bitmap[y * ((width + BITSZ_OF (uint8_t) - 1) / BITSZ_OF (uint8_t))];
+        p2 = p0 + ((width + BITSZ_OF (uint8_t) - 1) / BITSZ_OF (uint8_t)) - 1;
+        p1 = p2 + 1 - ((shift + BITSZ_OF (uint8_t) - 1) / BITSZ_OF (uint8_t));
+#if DEBUG
+if (shift < BITSZ_OF (uint8_t)) {
+    assert (p1 == p2);
+} else if (shift < BITSZ_OF (uint8_t) * 2) {
+    assert (p1 + 1 == p2);
+}
+#endif
+        for (; p2 >= p0; p2 --) {
+            val = 0;
+            if (p1 >= p0) {
+                val = *p1;
+                assert (byteshift < BITSZ_OF (uint8_t));
+                if (byteshift > 0) {
+                    val >>= byteshift;
+                    if (p1 > p0) {
+                        val |= (*(p1-1) << (BITSZ_OF (uint8_t) - byteshift));
+                    }
+                }
+                p1 --;
+            }
+            *p2 = val;
+        }
     }
 }
 
@@ -371,7 +402,7 @@ void OutlineCharacter(unsigned char *bitmap, int width, int height)
 ///
 ///	@todo bbx isn't used to correct character position in bitmap
 ///
-void ReadBdf(FILE * bdf, FILE * out, const char *name)
+void ReadBdf(FILE * bdf, FILE * out, const char *name, const char * fnppm)
 {
     char linebuf[1024];
     char *s;
@@ -420,6 +451,7 @@ void ReadBdf(FILE * bdf, FILE * out, const char *name)
        printf("%d * %dx%d\n", chars, fontboundingbox_width,
        fontboundingbox_height);
      */
+    bdf2c_fontpic_init (fnppm, chars, fontboundingbox_width, fontboundingbox_height);
     //
     //	Some checks.
     //
@@ -536,7 +568,9 @@ void ReadBdf(FILE * bdf, FILE * out, const char *name)
 	    memset(bitmap, 0,
 		((fontboundingbox_width + 7) / 8) * fontboundingbox_height);
 	} else if (!strcasecmp(s, "ENDCHAR")) {
+        char flag_shifted = 0;
 	    if (bbx) {
+            flag_shifted = 1;
 		RotateBitmap(bitmap, bbx, fontboundingbox_width,
 		    fontboundingbox_height);
 	    }
@@ -546,6 +580,8 @@ void ReadBdf(FILE * bdf, FILE * out, const char *name)
 		OutlineCharacter(bitmap, fontboundingbox_width,
 		    fontboundingbox_height);
 	    }
+
+	    bdf2c_fontpic_add (bitmap, fontboundingbox_width, fontboundingbox_height, encoding, flag_shifted);
 	    DumpCharacter(out, bitmap, fontboundingbox_width,
 		fontboundingbox_height);
 	    scanline = -1;
@@ -584,6 +620,7 @@ void ReadBdf(FILE * bdf, FILE * out, const char *name)
     EncodingTable(out, name, encoding_table, chars);
 
     Footer(out, name, fontboundingbox_width, fontboundingbox_height, chars);
+    bdf2c_fontpic_clear ();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -623,15 +660,27 @@ void PrintUsage(void)
 int main(int argc, char *const argv[])
 {
     const char *name;
+    const char *fnppm = "out.ppm";
+    FILE * fout = stdout;
+    FILE * fin = stdin;
 
     name = "font";			// default variable name
     //
     //	Parse arguments.
     //
     for (;;) {
-	switch (getopt(argc, argv, "bcC:n:hO?-")) {
+	switch (getopt(argc, argv, "bcC:n:i:o:p:hO?-")) {
 	    case 'b':			// bdf file name
-		ReadBdf(stdin, stdout, name);
+		ReadBdf(stdin, stdout, name, fnppm);
+		continue;
+	    case 'i':
+		fin = fopen(optarg, "rb");
+		continue;
+	    case 'o':
+		fout = fopen(optarg, "wb");
+		continue;
+	    case 'p':
+		fnppm = optarg;
 		continue;
 	    case 'c':			// create header file
 		CreateFontHeaderFile(stdout);
@@ -682,5 +731,6 @@ int main(int argc, char *const argv[])
 	fprintf(stderr, "Unhandled argument '%s'\n", argv[optind++]);
     }
 
+    ReadBdf(fin, fout, name, fnppm);
     return 0;
 }
