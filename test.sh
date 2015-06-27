@@ -1,10 +1,10 @@
 #!/bin/sh
 
 fontlist=(
+    unifont-7.0.06.bdf
     dejavusanyuanti.bdf
     unifont.bdf
     wenquanyi_12pt.bdf
-    unifont-7.0.06.bdf
     )
 
 DN_BASE=../

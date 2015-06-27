@@ -10,8 +10,8 @@
 #define FONT_DATA_H
 
 #define FNT_WIDTH  5
-#define FNT_HEIGHT 7
-#define FNT_GET_PIXEL(c, x, y) (*(g_basefont + ((c) * 5) + (x)) & (unsigned char)(0x80 >> (1 + (y))) )
+#define FNT_HEIGHT (7+1)
+#define FNT_GET_PIXEL(c, x, y) (*(g_basefont + ((c) * 5) + (x)) & (unsigned char)(0x80 >> (y)) )
 
 #ifndef PROGMEM
 #define PROGMEM

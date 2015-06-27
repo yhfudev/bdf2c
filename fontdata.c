@@ -8,16 +8,7 @@
  */
 #include "fontdata.h"
 
-//void drawchar (uint8_t x, uint8_t line, uint8_t c) {
-    //if ((line >= SSD1306_LCDHEIGHT/8) || (x >= (SSD1306_LCDWIDTH - 6)))
-        //return;
-    //for (uint8_t i =0; i<5; i++ ) {
-        //buffer[x + (line*128) ] = pgm_read_byte(font+(c*5)+i);
-        //x++;
-    //}
-//}
-
-// standard ascii 5x7 font
+// standard ascii 5x7 font, 5x8 area
 const unsigned char g_basefont[] PROGMEM = {
     0x00, 0x00, 0x00, 0x00, 0x00,
     0x3E, 0x5B, 0x4F, 0x5B, 0x3E,
