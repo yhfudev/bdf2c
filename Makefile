@@ -24,7 +24,7 @@ LIBS	=
 CFLAGS	=	-g -Werror -W -Wall #-Os
 LDFLAGS	=
 
-OBJS	=	ppmhdr.o bdf2c.o
+OBJS	=	ppmhdr.o fontdata.o bdf2c.o fontdraw.o
 HDRS	=	
 FILES	=	Makefile AGPL-3.0.txt README.txt Changelog.txt
 
@@ -49,7 +49,7 @@ indent:
 	done
 
 clean:
-	-rm -f *.o *~
+	-rm -f *.o *~ bdf2c
 
 clobber:	clean
 	-rm -f bdf2c

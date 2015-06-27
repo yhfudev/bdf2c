@@ -1,19 +1,22 @@
 #!/bin/sh
 
-FN_FNT=../unifont-7.0.06.bdf
-FN_FNT=../wenquanyi_12pt.bdf
-FN_FNT=../unifont.bdf
-FN_FNT=../dejavusanyuanti.bdf
+fontlist=(
+    dejavusanyuanti.bdf
+    unifont.bdf
+    wenquanyi_12pt.bdf
+    unifont-7.0.06.bdf
+    )
 
-FN_PPM=${FN_FNT}.ppm
-FN_C=${FN_FNT}.c
+DN_BASE=../
 
-make
-echo ./bdf2c -i ${FN_FNT} -o ${FN_C} -p ${FN_PPM}
-./bdf2c -i ${FN_FNT} -o ${FN_C} -p ${FN_PPM}
+make clean; make
+for FN_FNT in ${fontlist[*]} ; do
+    FN_PPM=${FN_FNT}.ppm
+    FN_C=${FN_FNT}.c
+    echo ./bdf2c -i ${DN_BASE}/${FN_FNT} -o ${DN_BASE}/${FN_C} -p ${DN_BASE}/${FN_PPM}
+    ./bdf2c -i ${DN_BASE}/${FN_FNT} -o ${DN_BASE}/${FN_C} -p ${DN_BASE}/${FN_PPM}
+done
 
-gcc -g -DDEBUG=1 -o tstppm ppmhdr.c
-#./tstppm
-
-
-
+gcc -g -DDEBUG=1 -o tstppm fontdata.c fontdraw.c ppmhdr.c
+./tstppm
+#exit 0

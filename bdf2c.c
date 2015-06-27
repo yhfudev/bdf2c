@@ -415,6 +415,7 @@ void ReadBdf(FILE * bdf, FILE * out, const char *name, const char * fnppm)
     int n;
     int scanline;
     char charname[1024];
+    char fontname[1024];
     int encoding;
     int bbx;
     int bby;
@@ -441,6 +442,9 @@ void ReadBdf(FILE * bdf, FILE * out, const char *name, const char * fnppm)
 	    fontboundingbox_width = atoi(p);
 	    p = strtok(NULL, " \t\n\r");
 	    fontboundingbox_height = atoi(p);
+	} else if (!strcasecmp(s, "FONT")) {
+	    p = strtok(NULL, " \t\n\r");
+	    strcpy (fontname, p);
 	} else if (!strcasecmp(s, "CHARS")) {
 	    p = strtok(NULL, " \t\n\r");
 	    chars = atoi(p);
@@ -451,7 +455,7 @@ void ReadBdf(FILE * bdf, FILE * out, const char *name, const char * fnppm)
        printf("%d * %dx%d\n", chars, fontboundingbox_width,
        fontboundingbox_height);
      */
-    bdf2c_fontpic_init (fnppm, chars, fontboundingbox_width, fontboundingbox_height);
+    bdf2c_fontpic_init (fnppm, chars, fontboundingbox_width, fontboundingbox_height, fontname);
     //
     //	Some checks.
     //
