@@ -12,6 +12,8 @@
 #include <stddef.h> // size_t
 #include <stdint.h> // uint32_t
 
+#include "fontdata.h"
+
 typedef struct _ppm_file_t {
     size_t xmax;
     size_t ymax;
@@ -25,12 +27,18 @@ typedef struct _ppm_cavas_t {
     size_t ymax;
     size_t bit; // 8bit for ARGB
     size_t buffer_size; // the byte size of the following buffer
+    const fontdata_t *fontptr;
     uint8_t buffer[4];
 } ppm_cavas_t;
 
 ppm_cavas_t * ppm_cavas_resize (ppm_cavas_t * pppm, size_t x, size_t y, size_t bit);
 //ppm_cavas_t * ppm_cavas_create (size_t x, size_t y, size_t bit);
 #define ppm_cavas_create(x,y,bit) ppm_cavas_resize (NULL, (x), (y), (bit))
+
+//size_t ppm_cavas_width (ppm_cavas_t * p);
+//size_t ppm_cavas_height (ppm_cavas_t * p);
+#define ppm_cavas_width(p) ((p)->xmax)
+#define ppm_cavas_height(p) ((p)->ymax)
 
 void ppm_cavas_destroy (ppm_cavas_t * p);
 void ppm_cavas_zero (ppm_cavas_t * p);

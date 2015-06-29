@@ -434,7 +434,7 @@ void ReadBdf(FILE * bdf, FILE * out, const char *name, const char * fnppm)
 	    break;
 	}
 	if (!(s = strtok(linebuf, " \t\n\r"))) {	// empty line
-	    break;
+	    if (chars > 0) break; else continue;
 	}
 	// printf("token:%s\n", s);
 	if (!strcasecmp(s, "FONTBOUNDINGBOX")) {
@@ -500,6 +500,9 @@ void ReadBdf(FILE * bdf, FILE * out, const char *name, const char * fnppm)
 
     Header(out, name);
 
+    //int fseek(FILE *stream, long offset, int whence);
+    fseek (bdf, 0, SEEK_SET);
+
     scanline = -1;
     n = 0;
     encoding = -1;
@@ -514,7 +517,7 @@ void ReadBdf(FILE * bdf, FILE * out, const char *name, const char * fnppm)
 	    break;
 	}
 	if (!(s = strtok(linebuf, " \t\n\r"))) {	// empty line
-	    break;
+	    continue; //break;
 	}
 	// printf("token:%s\n", s);
 	if (!strcasecmp(s, "STARTCHAR")) {
