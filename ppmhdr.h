@@ -9,6 +9,7 @@
 #ifndef _PPM_HDR_H
 #define _PPM_HDR_H
 
+#include <stdio.h> // FILE
 #include <stddef.h> // size_t
 #include <stdint.h> // uint32_t
 
@@ -52,9 +53,11 @@ int ppm_close (ppm_file_t *fp);
 int ppm_bitblit_from (ppm_file_t *fp_dest, ppm_cavas_t *src, size_t dx, size_t dy, size_t sx, size_t sy, size_t wx, size_t hy);
 int ppm_bitblit_to (ppm_cavas_t *dest, ppm_file_t *fp_src, size_t dx, size_t dy, size_t sx, size_t sy, size_t wx, size_t hy);
 
+#define PPM_FNT_BORDER 1
 int bdf2c_fontpic_init (const char * filename, size_t num, size_t wx, size_t hy, const char * msg);
 void bdf2c_fontpic_set_name(const char * name);
 void bdf2c_fontpic_clear();
-void bdf2c_fontpic_add (uint8_t *bitmap, size_t width, size_t height, int encoding, char flag_shifted);
+void bdf2c_fontpic_add (uint8_t *bitmap, size_t width, size_t height, int shiftx, int shifty, int encoding, char flag_shifted, char flag_overflowed);
+void bdf2c_fontpic_add_cavas (ppm_cavas_t * pchbuf, size_t width, size_t height, int encoding, char flag_shifted, char flag_overflowed);
 
 #endif // _PPM_HDR_H

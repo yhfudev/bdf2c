@@ -107,7 +107,7 @@ ppm_cavas_pixel (ppm_cavas_t * pppm, size_t x, size_t y, uint8_t color[4])
     uint8_t *p;
     assert (NULL != pppm);
     if ((x >= pppm->xmax) || (y >= pppm->ymax)) {
-        fprintf (stderr, "Warning: out of range: max(%zu,%zu) <= in(%zu,%zu)\n", pppm->xmax, pppm->ymax, x, y);
+        //fprintf (stderr, "Warning: out of range: max(%zu,%zu) <= in(%zu,%zu)\n", pppm->xmax, pppm->ymax, x, y);
         if (x > 100000000 || y > 10000000) {
             fprintf (stderr, "Error in data\n");
         }
@@ -319,6 +319,8 @@ ppm_create (ppm_file_t *fp, const char * filename, size_t x, size_t y, size_t de
     if (fp == NULL) {
         return -1;
     }
+    memset (fp, 0, sizeof (*fp));
+
     fp->fp = fopen (filename, "wb");
     if (NULL == fp->fp) {
         // error
@@ -348,7 +350,7 @@ ppm_close (ppm_file_t *fp)
 }
 
 void
-DumpCharacter2Cavas(ppm_cavas_t * out, size_t offx, size_t offy, uint8_t *bitmap, size_t width, size_t height, uint8_t c_dot[4], uint8_t c_background[4])
+DumpCharacter2Cavas(ppm_cavas_t * out, int offx, int offy, uint8_t *bitmap, size_t width, size_t height, uint8_t c_dot[4], uint8_t c_background[4])
 {
     size_t x;
     size_t y;
@@ -364,6 +366,16 @@ DumpCharacter2Cavas(ppm_cavas_t * out, size_t offx, size_t offy, uint8_t *bitmap
             //printf("%d = %d\n", y * ((width+7)/8) + x/8, c);
             mask = 0x80;
             for (i = 0; (i < 8) && (x + i < width); i ++) {
+                if (offx < 0) {
+                    if ((size_t)(-offx) > x + i) {
+                        continue;
+                    }
+                }
+                if (offy < 0) {
+                    if ((size_t)(-offy) > y) {
+                        continue;
+                    }
+                }
                 if (c & mask) {
                     ppm_cavas_pixel (out, offx + x + i, offy + y, c_dot);
                 } else {
@@ -411,6 +423,8 @@ bdf2c_fontpic_init (const char * filename, size_t num, size_t wx, size_t hy, con
 // debug
 if (num <= 256) {
     num = 256;
+} else if (num < 9000) {
+    num = 9000;
 } else if (num < 65536) {
     num = 65536;
 }
@@ -475,11 +489,13 @@ static uint8_t bitmap_hznone[] = {
     0xff, 0xff,
 };
 
-static uint8_t color_shift[4] = {0, 255, 0, 0};
+static uint8_t color_metric[4] = {0, 90, 90, 90};
+static uint8_t color_overflow[4] = {0, 255, 0, 0};
+static uint8_t color_shift[4] = {0, 0, 255, 0};
 static uint8_t color_none[4] = {0, 255, 0, 0};
 static uint8_t color_line[4] = {0, 190, 190, 190};
 static uint8_t color_dot[4] = {0,   0,   0, 255};
-static uint8_t color_background[4] = {0, 255, 255, 255};;
+static uint8_t color_background[4] = {0, 255, 255, 255};
 
 int
 bdf2c_fontpic_draw_metric ()
@@ -500,25 +516,25 @@ bdf2c_fontpic_draw_metric ()
     ppm_cavas_fill (pcavas, color_background);
     // description
     sprintf ((char *)buf1, "By ppmhdr, Yunhui Fu <yhfudev@gmail.com>");
-    ppm_cavas_drawstring (pcavas, PPM_OFF_X + 1, PPM_OFF_X - ppm_cavas_getfont_height(pcavas) - 5, color_shift, color_background, buf1);
+    ppm_cavas_drawstring (pcavas, PPM_OFF_X + 1, PPM_OFF_X - ppm_cavas_getfont_height(pcavas) - 5, color_metric, color_background, buf1);
     sprintf ((char *)buf1, "Font %lux%lu, %s", char_wx, char_hy, fntname);
     //sprintf ((char *)buf1, "SWpqstgy");
-    ppm_cavas_drawstring (pcavas, PPM_OFF_X + 1, PPM_OFF_X - ppm_cavas_getfont_height(pcavas) - 1 - ppm_cavas_getfont_height(pcavas) - 5, color_shift, color_background, buf1);
+    ppm_cavas_drawstring (pcavas, PPM_OFF_X + 1, PPM_OFF_X - ppm_cavas_getfont_height(pcavas) - 1 - ppm_cavas_getfont_height(pcavas) - 5, color_metric, color_background, buf1);
     // draw line:
     for (i = 0; i < (char_wx + 2*PPM_FNT_BORDER) * pic_xnum; i ++) {
-        ppm_cavas_pixel (pcavas, i + PPM_OFF_X, 0, color_dot);
+        ppm_cavas_pixel (pcavas, i + PPM_OFF_X, 0, color_metric);
     }
     // draw dot
     cnt = 0;
     for (i = 0; i < (char_wx + 2*PPM_FNT_BORDER) * pic_xnum; i += (char_wx + 2*PPM_FNT_BORDER)) {
-        ppm_cavas_pixel (pcavas, char_wx / 2 + PPM_FNT_BORDER + i + PPM_OFF_X, 1, color_shift);
-        ppm_cavas_pixel (pcavas, char_wx / 2 + PPM_FNT_BORDER + i + PPM_OFF_X, 2, color_shift);
+        ppm_cavas_pixel (pcavas, char_wx / 2 + PPM_FNT_BORDER + i + PPM_OFF_X, 1, color_metric);
+        ppm_cavas_pixel (pcavas, char_wx / 2 + PPM_FNT_BORDER + i + PPM_OFF_X, 2, color_metric);
         sprintf ((char *)buf1, "%02X", cnt);
         cnt ++;
         ppm_cavas_drawstring (pcavas
             , char_wx/2 + PPM_FNT_BORDER + i + PPM_OFF_X - ppm_cavas_getfont_width(pcavas)
             , 4
-            , color_shift, color_background, buf1);
+            , color_metric, color_background, buf1);
     }
     ppm_bitblit_from (&fd, pcavas, 0, PPM_OFF_Y + (char_hy + 2*PPM_FNT_BORDER) * pic_ynum, 0, 0, pcavas->xmax, pcavas->ymax);
 
@@ -526,19 +542,19 @@ bdf2c_fontpic_draw_metric ()
     ppm_cavas_fill (pcavas, color_background);
     // draw line:
     for (i = 0; i < (char_wx + 2*PPM_FNT_BORDER) * pic_xnum; i ++) {
-        ppm_cavas_pixel (pcavas, i + PPM_OFF_X, PPM_OFF_Y - 1, color_dot);
+        ppm_cavas_pixel (pcavas, i + PPM_OFF_X, PPM_OFF_Y - 1, color_metric);
     }
     cnt = 0;
     // draw dot and mark
     for (i = 0; i < (char_wx + 2*PPM_FNT_BORDER) * pic_xnum; i += (char_wx + 2*PPM_FNT_BORDER)) {
-        ppm_cavas_pixel (pcavas, char_wx / 2 + PPM_FNT_BORDER + i + PPM_OFF_X, PPM_OFF_Y - 2, color_shift);
-        ppm_cavas_pixel (pcavas, char_wx / 2 + PPM_FNT_BORDER + i + PPM_OFF_X, PPM_OFF_Y - 3, color_shift);
+        ppm_cavas_pixel (pcavas, char_wx / 2 + PPM_FNT_BORDER + i + PPM_OFF_X, PPM_OFF_Y - 2, color_metric);
+        ppm_cavas_pixel (pcavas, char_wx / 2 + PPM_FNT_BORDER + i + PPM_OFF_X, PPM_OFF_Y - 3, color_metric);
         sprintf ((char *)buf1, "%02X", cnt);
         cnt ++;
         ppm_cavas_drawstring (pcavas
             , char_wx / 2 + PPM_FNT_BORDER + i + PPM_OFF_X - ppm_cavas_getfont_width(pcavas)
             , PPM_OFF_Y - 3 - ppm_cavas_getfont_height(pcavas) - 1
-            , color_shift, color_background, buf1);
+            , color_metric, color_background, buf1);
     }
     ppm_bitblit_from (&fd, pcavas, 0, 0, 0, 0, pcavas->xmax, pcavas->ymax);
 
@@ -553,19 +569,19 @@ bdf2c_fontpic_draw_metric ()
     // draw line:
     ppm_cavas_fill (pcavas, color_background);
     for (i = 0; i < (char_hy + 2*PPM_FNT_BORDER) * pic_ynum; i ++) {
-        ppm_cavas_pixel (pcavas, 0, i + PPM_OFF_Y, color_dot);
+        ppm_cavas_pixel (pcavas, 0, i + PPM_OFF_Y, color_metric);
     }
     // draw dot and mark
     cnt = 0;
     for (i = 0; i < (char_hy + 2*PPM_FNT_BORDER) * pic_ynum; i += (char_hy + 2*PPM_FNT_BORDER)) {
-        ppm_cavas_pixel (pcavas, 1, char_hy / 2 + PPM_FNT_BORDER + i + PPM_OFF_Y, color_shift);
-        ppm_cavas_pixel (pcavas, 2, char_hy / 2 + PPM_FNT_BORDER + i + PPM_OFF_Y, color_shift);
+        ppm_cavas_pixel (pcavas, 1, char_hy / 2 + PPM_FNT_BORDER + i + PPM_OFF_Y, color_metric);
+        ppm_cavas_pixel (pcavas, 2, char_hy / 2 + PPM_FNT_BORDER + i + PPM_OFF_Y, color_metric);
         sprintf ((char *)buf1, "%02X", cnt);
         cnt ++;
         ppm_cavas_drawstring (pcavas
             , 4
             , char_hy / 2 + PPM_FNT_BORDER + i + PPM_OFF_Y - ppm_cavas_getfont_height(pcavas)/2 - 1
-            , color_shift, color_background, buf1);
+            , color_metric, color_background, buf1);
     }
     ppm_bitblit_from (&fd, pcavas, PPM_OFF_X + (char_wx + 2*PPM_FNT_BORDER) * pic_xnum, 0, 0, 0, pcavas->xmax, pcavas->ymax);
 
@@ -573,19 +589,19 @@ bdf2c_fontpic_draw_metric ()
     // draw line:
     ppm_cavas_fill (pcavas, color_background);
     for (i = 0; i < (char_hy + 2*PPM_FNT_BORDER) * pic_ynum; i ++) {
-        ppm_cavas_pixel (pcavas, PPM_OFF_X - 1, i + PPM_OFF_Y, color_dot);
+        ppm_cavas_pixel (pcavas, PPM_OFF_X - 1, i + PPM_OFF_Y, color_metric);
     }
     // draw dot
     cnt = 0;
     for (i = 0; i < (char_hy + 2*PPM_FNT_BORDER) * pic_ynum; i += (char_hy + 2*PPM_FNT_BORDER)) {
-        ppm_cavas_pixel (pcavas, PPM_OFF_X - 2, char_hy / 2 + PPM_FNT_BORDER + i + PPM_OFF_Y, color_shift);
-        ppm_cavas_pixel (pcavas, PPM_OFF_X - 3, char_hy / 2 + PPM_FNT_BORDER + i + PPM_OFF_Y, color_shift);
+        ppm_cavas_pixel (pcavas, PPM_OFF_X - 2, char_hy / 2 + PPM_FNT_BORDER + i + PPM_OFF_Y, color_metric);
+        ppm_cavas_pixel (pcavas, PPM_OFF_X - 3, char_hy / 2 + PPM_FNT_BORDER + i + PPM_OFF_Y, color_metric);
         sprintf ((char *)buf1, "%02X", cnt);
         cnt ++;
         ppm_cavas_drawstring (pcavas
             , PPM_OFF_X - 3 - (ppm_cavas_getfont_width(pcavas) + 1) * 2
             , char_hy / 2 + PPM_FNT_BORDER + i + PPM_OFF_Y - ppm_cavas_getfont_height(pcavas)/2 - 1
-            , color_shift, color_background, buf1);
+            , color_metric, color_background, buf1);
 
     }
     ppm_bitblit_from (&fd, pcavas, 0, 0, 0, 0, pcavas->xmax, pcavas->ymax);
@@ -606,7 +622,7 @@ bdf2c_fontpic_clear()
 }
 
 void
-bdf2c_fontpic_add_cavas (ppm_cavas_t * pchbuf, size_t width, size_t height, int encoding, char flag_shifted)
+bdf2c_fontpic_add_cavas (ppm_cavas_t * pchbuf, size_t width, size_t height, int encoding, char flag_shifted, char flag_overflowed)
 {
     size_t x;
     size_t y;
@@ -629,6 +645,9 @@ bdf2c_fontpic_add_cavas (ppm_cavas_t * pchbuf, size_t width, size_t height, int 
     color1 = color_line;
     if (flag_shifted) {
         color1 = color_shift;
+    }
+    if (flag_overflowed) {
+        color1 = color_overflow;
     }
 
     for (j = 0; j < width + 2*PPM_FNT_BORDER; j ++) {
@@ -655,7 +674,7 @@ bdf2c_fontpic_add_cavas (ppm_cavas_t * pchbuf, size_t width, size_t height, int 
 // bitmap == NULL, place a holder sign
 // flag_shifted, 1=if there's a BBX value for x shift > 0 in BDF font file
 void
-bdf2c_fontpic_add (uint8_t *bitmap, size_t width, size_t height, int encoding, char flag_shifted)
+bdf2c_fontpic_add (uint8_t *bitmap, size_t width, size_t height, int shiftx, int shifty, int encoding, char flag_shifted, char flag_overflow)
 {
     ppm_cavas_fill (chbuf, color_background);
     if (NULL == bitmap) {
@@ -663,9 +682,9 @@ bdf2c_fontpic_add (uint8_t *bitmap, size_t width, size_t height, int encoding, c
         assert (height >= 16);
         DumpCharacter2Cavas (chbuf, PPM_FNT_BORDER + (width - 16)/2, PPM_FNT_BORDER + (height - 16)/2, bitmap_hznone, 16, 16, color_none, color_background);
     } else {
-        DumpCharacter2Cavas (chbuf, PPM_FNT_BORDER, PPM_FNT_BORDER, bitmap, width, height, color_dot, color_background);
+        DumpCharacter2Cavas (chbuf, PPM_FNT_BORDER + shiftx, PPM_FNT_BORDER + shifty, bitmap, width, height, color_dot, color_background);
     }
-    bdf2c_fontpic_add_cavas (chbuf, width, height, encoding, flag_shifted);
+    bdf2c_fontpic_add_cavas (chbuf, width, height, encoding, flag_shifted, flag_overflow);
 }
 
 
@@ -691,7 +710,7 @@ bdf2c_fontpic_add_fntchar (unsigned char c, char flag_shifted)
             , height
             , bitmap_hznone, 16, 16, color_none, color_background);
     }
-    bdf2c_fontpic_add_cavas (chbuf, ppm_cavas_getfont_width(chbuf), ppm_cavas_getfont_height(chbuf), c, flag_shifted);
+    bdf2c_fontpic_add_cavas (chbuf, ppm_cavas_getfont_width(chbuf), ppm_cavas_getfont_height(chbuf), c, flag_shifted, 0);
 }
 
 void
@@ -787,7 +806,7 @@ test_ppm2(int shift)
 
     bdf2c_fontpic_init ("test2.ppm", MAX_FONT_ITEMS, 16, 16, "tstfont");
     for (i = 0; i < MAX_FONT_ITEMS; i ++) {
-        bdf2c_fontpic_add (buf, 16, 16, i, 1);
+        bdf2c_fontpic_add (buf, 16, 16, 0, 0, i, 1);
     }
     bdf2c_fontpic_clear ();
 }
