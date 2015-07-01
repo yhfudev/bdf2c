@@ -216,16 +216,24 @@ void Footer(FILE * out, const char *name, int width, int height, int chars)
 ///	@param width	character width
 ///	@param height	character height
 ///
-void DumpCharacter(FILE * out, unsigned char *bitmap, int width, int height)
+void DumpCharacter(FILE * out, unsigned char *bitmap, int width, int height, int yoffset, char * prefix)
 {
     int x;
     int y;
     int c;
+    int bmheight = yoffset;
+    if (bmheight < 0) {
+        bmheight = -yoffset;
+    }
+    bmheight = height - bmheight;
 
-    for (y = 0; y < height; ++y) {
-	fputc('\t', out);
+    for (; yoffset > 0; yoffset --) {
+        fprintf (out, "\t%s________,________,\n", prefix);
+    }
+    for (y = 0; y < bmheight; ++y) {
+	fprintf (out, "\t%s", prefix); //fputc('\t', out);
 	for (x = 0; x < width; x += 8) {
-	    c = bitmap[y * ((width + 7) / 8) + x / 8];
+            c = bitmap[ (y-yoffset) * ((width + 7) / 8) + x / 8];
 	    //printf("%d = %d\n", y * ((width+7)/8) + x/8, c);
 	    if (c & 0x80) {
 		fputc('X', out);
@@ -270,6 +278,9 @@ void DumpCharacter(FILE * out, unsigned char *bitmap, int width, int height)
 	    fputc(',', out);
 	}
 	fputc('\n', out);
+    }
+    for (; yoffset < 0; yoffset ++) {
+        fprintf (out, "\t%s________,________,\n", prefix);
     }
 }
 
@@ -350,12 +361,15 @@ if (shiftx < BITSZ_OF (uint8_t)) {
             *p2 = val;
         }
     }
-    /*if (shifty) {
+#if 0
+// don't offset here, we do it in DumpCharacter()
+    if (shifty) {
         byteshift = (width + BITSZ_OF (uint8_t) - 1) / BITSZ_OF (uint8_t);
         if (shifty < 0) {
             p0 = bitmap;
             p1 = bitmap - shifty * byteshift;
             byteshift = byteshift * (height + shifty);
+            memset (p0, 0, p1 - p0);
         } else {
             assert (shifty > 0);
             p1 = bitmap;
@@ -364,7 +378,8 @@ if (shiftx < BITSZ_OF (uint8_t)) {
         }
         fprintf (stderr, "w=%d,h=%d, shifty=%d, move bytes: %lu, p0=%p, p1=%p\n", width, height, shifty, byteshift, p0, p1);
         memmove (p1, p0, byteshift);
-    }*/
+    }
+#endif
 }
 
 ///
@@ -413,6 +428,30 @@ void OutlineCharacter(unsigned char *bitmap, int width, int height)
     memcpy(bitmap, outline, ((width + 7) / 8) * height);
 }
 
+/*
+    FONTBOUNDINGBOX 16 18 0 -2
+    BBX 16 15 0 -1
+In the following diagram, the boundary of the font bounding box is dashed, while the boundary of the bitmap bounding box is dotted:
+                |<--- width --->|
+                      = 16
+                -----------------      -
+a blank row-->  |               |      ^
+a blank row-->  |               |      |
+                |...............| -    |
+                |///////////////| ^    |
+                |///////////////| |    |
+                |// 16x15  /////| |    |
+                |// bitmap /////| |15  |18 = FONTBOUNDINGBOX height.
+                |///////////////| |    |
+                |///////////////| |    |
+baseline ---->  O---------------- |    |   point "O" = Origin (0,0)
+                |///////////////| v    |
+              -1|...............| -    |   -1 = yd of BBX.
+a blank row-->  |               |      v
+              -2-----------------      -   -2 = yd of FONTBOUNDINGBOX.
+
+*/
+
 ///
 ///	Read BDF font file.
 ///
@@ -427,9 +466,11 @@ void ReadBdf(FILE * bdf, FILE * out, const char *name, const char * fnppm)
     char linebuf[1024];
     char *s;
     char *p;
-    int fontboundingbox_width;
-    int fontboundingbox_height;
-    int chars;
+    int fontboundingbox_width = 0;
+    int fontboundingbox_height = 0;
+    int fontboundingbox_xoff = 0;
+    int fontboundingbox_yoff = 0;
+    int chars = 0;
     int i;
     int j;
     int n;
@@ -446,9 +487,6 @@ void ReadBdf(FILE * bdf, FILE * out, const char *name, const char * fnppm)
     unsigned *encoding_table;
     unsigned char *bitmap;
 
-    fontboundingbox_width = 0;
-    fontboundingbox_height = 0;
-    chars = 0;
     for (;;) {
 	if (!fgets(linebuf, sizeof(linebuf), bdf)) {	// EOF
 	    break;
@@ -462,6 +500,10 @@ void ReadBdf(FILE * bdf, FILE * out, const char *name, const char * fnppm)
 	    fontboundingbox_width = atoi(p);
 	    p = strtok(NULL, " \t\n\r");
 	    fontboundingbox_height = atoi(p);
+	    p = strtok(NULL, " \t\n\r");
+	    fontboundingbox_xoff = atoi(p);
+	    p = strtok(NULL, " \t\n\r");
+	    fontboundingbox_yoff = atoi(p);
 	} else if (!strcasecmp(s, "FONT")) {
 	    p = strtok(NULL, " \t\n\r");
 	    strcpy (fontname, p);
@@ -519,6 +561,7 @@ void ReadBdf(FILE * bdf, FILE * out, const char *name, const char * fnppm)
     }
 
     Header(out, name);
+    fprintf(out, "// FONTBOUNDINGBOX %d %d %d %d\n", fontboundingbox_width, fontboundingbox_height, fontboundingbox_xoff, fontboundingbox_yoff);
 
     //int fseek(FILE *stream, long offset, int whence);
     fseek (bdf, 0, SEEK_SET);
@@ -600,42 +643,50 @@ void ReadBdf(FILE * bdf, FILE * out, const char *name, const char * fnppm)
 	} else if (!strcasecmp(s, "ENDCHAR")) {
             char flag_shifted = 0;
             char flag_overflow = 0;
-            if (bbx) {
+            if (bbx - fontboundingbox_xoff) {
                 flag_shifted = 1;
-                if (bbx < 0) {
+                if (bbx < fontboundingbox_xoff) { // - fontboundingbox_xoff + bbx < 0
                     flag_overflow = 1;
-                } else if (bbx + width > fontboundingbox_width) {
-                    flag_overflow = 1;
-                }
-            }
-            if (bby) {
-                flag_shifted = 1;
-                if (bby > 0) {
-                    flag_overflow = 1;
-                } else if (scanline - bby > fontboundingbox_height) {
+                } else if (bbw + bbx > fontboundingbox_xoff + fontboundingbox_width) { // - fontboundingbox_xoff + bbx + bbw > fontboundingbox_width
                     flag_overflow = 1;
                 }
             }
-            /*if (bby) {
+            if (bby + bbh - fontboundingbox_yoff - fontboundingbox_height) {
                 flag_shifted = 1;
-                RotateBitmap(bitmap, 0, bby, fontboundingbox_width,
-                    fontboundingbox_height, width, scanline);
-            }*/
-	    if (bbx) {
+                if (bby < fontboundingbox_yoff) {
+                    flag_overflow = 1;
+                } else if ( bby + bbh > fontboundingbox_yoff + fontboundingbox_height) { // fontboundingbox_height - (bby - fontboundingbox_yoff + bbh) < 0
+                    flag_overflow = 1;
+                }
+            }
+#if 0
+            if (bby + bbh - fontboundingbox_yoff - fontboundingbox_height) {
                 flag_shifted = 1;
-		RotateBitmap(bitmap, bbx, 0, fontboundingbox_width,
-		    fontboundingbox_height, width, scanline);
+                RotateBitmap(bitmap, 0, fontboundingbox_height + fontboundingbox_yoff - bbh - bby, fontboundingbox_width,
+                    fontboundingbox_height, width, bbh);
+            }
+#endif
+	    if (bbx - fontboundingbox_xoff) {
+                flag_shifted = 1;
+		RotateBitmap(bitmap, bbx - fontboundingbox_xoff, 0, fontboundingbox_width,
+		    fontboundingbox_height, bbw, bbh);
 	    }
 	    if (Outline) {
 		RotateBitmap(bitmap, 1, 0, fontboundingbox_width,
-		    fontboundingbox_height, width, scanline);
+		    fontboundingbox_height, bbw, bbh);
 		OutlineCharacter(bitmap, fontboundingbox_width,
 		    fontboundingbox_height);
 	    }
 
-	    bdf2c_fontpic_add (bitmap, fontboundingbox_width, fontboundingbox_height, 0, -bby, encoding, flag_shifted, flag_overflow);
-	    DumpCharacter(out, bitmap, fontboundingbox_width,
-		fontboundingbox_height);
+            bdf2c_fontpic_add (bitmap, fontboundingbox_width, fontboundingbox_height
+                , 0, fontboundingbox_height - (bby - fontboundingbox_yoff + bbh)
+                , encoding
+                , flag_shifted, flag_overflow);
+            //fprintf (out, "// fw=%d,fh=%d,yoff=%d\n", fontboundingbox_width, fontboundingbox_height, fontboundingbox_height - (bby - fontboundingbox_yoff + bbh));
+            if (flag_overflow) {
+                DumpCharacter(out, bitmap, fontboundingbox_width, fontboundingbox_height, 0, "//");
+            }
+	    DumpCharacter(out, bitmap, fontboundingbox_width, fontboundingbox_height, fontboundingbox_height - (bby - fontboundingbox_yoff + bbh), "");
 	    scanline = -1;
 	    width = INT_MIN;
 	} else {
