@@ -778,9 +778,15 @@ int main(int argc, char *const argv[])
 		continue;
 	    case 'i':
 		fin = fopen(optarg, "rb");
+                if (NULL == fin) {
+                    fprintf (stderr, "input file error: %s\n", optarg);
+                }
 		continue;
 	    case 'o':
 		fout = fopen(optarg, "wb");
+                if (NULL == fin) {
+                    fprintf (stderr, "output file error: %s\n", optarg);
+                }
 		continue;
 	    case 'p':
 		fnppm = optarg;
@@ -834,6 +840,14 @@ int main(int argc, char *const argv[])
 	fprintf(stderr, "Unhandled argument '%s'\n", argv[optind++]);
     }
 
+    if (NULL == fin) {
+        fprintf (stderr, "input file error\n");
+        return -1;
+    }
+    if (NULL == fout) {
+        fprintf (stderr, "output file error\n");
+        return -1;
+    }
     ReadBdf(fin, fout, name, fnppm);
     return 0;
 }
