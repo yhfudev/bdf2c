@@ -806,7 +806,7 @@ test_ppm2(int shift)
 
     bdf2c_fontpic_init ("test2.ppm", MAX_FONT_ITEMS, 16, 16, "tstfont");
     for (i = 0; i < MAX_FONT_ITEMS; i ++) {
-        bdf2c_fontpic_add (buf, 16, 16, 0, 0, i, 1);
+        bdf2c_fontpic_add (buf, 16, 16, 0, 0, i, 1, 0);
     }
     bdf2c_fontpic_clear ();
 }
@@ -836,16 +836,18 @@ test_ppm3(int shift)
     */
 
     GENERATE_FONTDATA_TEST (g_font5x8_0);
-    //GENERATE_FONTDATA_TEST (g_font6x8_0);
-    //GENERATE_FONTDATA_TEST (g_fontdata_4x6_tiny);
-    //GENERATE_FONTDATA_TEST (g_fontdata_8x16);
+    GENERATE_FONTDATA_TEST (g_font6x8_0);
+    GENERATE_FONTDATA_TEST (g_fontdata_4x6_tiny);
+    GENERATE_FONTDATA_TEST (g_fontdata_8x16);
 
-    //GENERATE_FONTDATA_TEST (g_fontdata_16x24digits);
-    //GENERATE_FONTDATA_TEST (g_fontdata_big_digits);
-    //GENERATE_FONTDATA_TEST (g_fontdata_medium_digits);
-    //GENERATE_FONTDATA_TEST (g_font5x8_1);
-    //GENERATE_FONTDATA_TEST (g_font5x8_2);
-    //GENERATE_FONTDATA_TEST (g_fontdata_6x8_small);
+    GENERATE_FONTDATA_TEST (g_fontdata_32x50_sevendigit);
+
+    GENERATE_FONTDATA_TEST (g_fontdata_16x24digits);
+    GENERATE_FONTDATA_TEST (g_fontdata_big_digits);
+    GENERATE_FONTDATA_TEST (g_fontdata_medium_digits);
+    GENERATE_FONTDATA_TEST (g_font5x8_1);
+    GENERATE_FONTDATA_TEST (g_font5x8_2);
+    GENERATE_FONTDATA_TEST (g_fontdata_6x8_small);
 }
 
 

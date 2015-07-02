@@ -38,46 +38,35 @@ ppm_cavas_getfont_height (ppm_cavas_t * pppm)
     return fontdata_get_height (pppm->fontptr);
 }
 
+struct _ppmcavas_fontdraw_info_t {
+    ppm_cavas_t * pppm;
+    int offx;
+    int offy;
+    uint8_t * color_front;
+    uint8_t * color_background;
+};
+
+void
+fontdata_cb_draw_ppmcavas (void *userdata, int x, int y, char is_dot)
+{
+    struct _ppmcavas_fontdraw_info_t *pdata = userdata;
+    if (is_dot) {
+        ppm_cavas_pixel (pdata->pppm, pdata->offx + x, pdata->offy + y, pdata->color_front);
+    } else {
+        ppm_cavas_pixel (pdata->pppm, pdata->offx + x, pdata->offy + y, pdata->color_background);
+    }
+}
+
 int
 ppm_cavas_fontdraw (ppm_cavas_t * pppm, size_t x, size_t y, uint8_t color_front[4], uint8_t color_background[4], unsigned char c)
 {
-    int i;
-    int j;
-    uint8_t * data = NULL;
-    int w;
-    int h;
-
-    assert (NULL != pppm);
-    assert (NULL != pppm->fontptr);
-    data = fontdata_get_char (pppm->fontptr, c);
-    if (NULL == data) {
-        return -1;
-    }
-
-    w = fontdata_get_width(pppm->fontptr);
-    h = fontdata_get_height(pppm->fontptr);
-    switch (fontdata_get_type(pppm->fontptr)) {
-#define FNTDAT_SHOW(type) \
-    case type: \
-        for (i = 0; i < h; i ++) { \
-            for (j = 0; j < w; j ++) { \
-                if (FONTDATA_PIXEL_AT_##type(data, w, h, j, i)) { \
-                    ppm_cavas_pixel (pppm, x + j, y + i, color_front); \
-                } else { \
-                    ppm_cavas_pixel (pppm, x + j, y + i, color_background); \
-                } \
-            } \
-        } \
-        break
-        //FNTDAT_SHOW(0);
-        //FNTDAT_SHOW(1);
-        FNTDAT_SHOW(9);
-        FNTDAT_SHOW(8);
-        FNTDAT_SHOW(11);
-    default:
-        FNTDAT_SHOW(10);
-    }
-    return 0;
+    struct _ppmcavas_fontdraw_info_t pcfdi;
+    pcfdi.pppm = pppm;
+    pcfdi.offx = x;
+    pcfdi.offy = y;
+    pcfdi.color_front = color_front;
+    pcfdi.color_background = color_background;
+    return fontdata_draw ((fontdata_t *)pppm->fontptr, c, &pcfdi, fontdata_cb_draw_ppmcavas);
 }
 
 int
