@@ -291,7 +291,7 @@ ppm_bitblit_to (ppm_cavas_t *dest, ppm_file_t *fp_src, size_t dx, size_t dy, siz
  * @brief load a PPM file
  */
 int
-ppm_load (ppm_file_t *fp, const char * filename)
+ppm_init_load (ppm_file_t *fp, const char * filename)
 {
     char buf[300];
     size_t x, y, d;
@@ -313,7 +313,7 @@ ppm_load (ppm_file_t *fp, const char * filename)
  * @brief create a new PPM file
  */
 int
-ppm_create (ppm_file_t *fp, const char * filename, size_t x, size_t y, size_t depth)
+ppm_init_new (ppm_file_t *fp, const char * filename, size_t x, size_t y, size_t depth)
 {
     assert (NULL != fp);
     if (fp == NULL) {
@@ -423,8 +423,8 @@ bdf2c_fontpic_init (const char * filename, size_t num, size_t wx, size_t hy, con
 // debug
 if (num <= 256) {
     num = 256;
-} else if (num < 9000) {
-    num = 9000;
+//} else if (num < 9000) {
+    //num = 9000;
 } else if (num < 65536) {
     num = 65536;
 }
@@ -448,7 +448,7 @@ if (num <= 256) {
     fprintf (stderr, "bit=%zu, num=%zu, w=%zu, h=%zu, wx=%zu, hy=%zu\n", bit, num, width, height, wx, hy);
     fprintf (stderr, "ppm.xmax=%zu, ppm.ymax=%zu\n", (wx + 2 * PPM_FNT_BORDER) * width + PPM_OFF_X * 2, (hy + 2 * PPM_FNT_BORDER) * height + PPM_OFF_Y * 2);
 
-    if (0 != ppm_create (&fd, filename, (wx + 2 * PPM_FNT_BORDER) * width + PPM_OFF_X * 2, (hy + 2 * PPM_FNT_BORDER) * height + PPM_OFF_Y * 2, 255)) {
+    if (0 != ppm_init_new (&fd, filename, (wx + 2 * PPM_FNT_BORDER) * width + PPM_OFF_X * 2, (hy + 2 * PPM_FNT_BORDER) * height + PPM_OFF_Y * 2, 255)) {
         fprintf (stderr, "error in create ppm file out.ppm\n");
         return -1;
     }
@@ -516,10 +516,10 @@ bdf2c_fontpic_draw_metric ()
     ppm_cavas_fill (pcavas, color_background);
     // description
     sprintf ((char *)buf1, "By ppmhdr, Yunhui Fu <yhfudev@gmail.com>");
-    ppm_cavas_drawstring (pcavas, PPM_OFF_X + 1, PPM_OFF_X - ppm_cavas_getfont_height(pcavas) - 5, color_metric, color_background, buf1);
+    ppm_cavas_drawstring (pcavas, PPM_OFF_X + 1, PPM_OFF_X - ppm_cavas_getfont_height(pcavas) - 5, color_metric, buf1);
     sprintf ((char *)buf1, "Font %lux%lu, %s", char_wx, char_hy, fntname);
     //sprintf ((char *)buf1, "SWpqstgy");
-    ppm_cavas_drawstring (pcavas, PPM_OFF_X + 1, PPM_OFF_X - ppm_cavas_getfont_height(pcavas) - 1 - ppm_cavas_getfont_height(pcavas) - 5, color_metric, color_background, buf1);
+    ppm_cavas_drawstring (pcavas, PPM_OFF_X + 1, PPM_OFF_X - ppm_cavas_getfont_height(pcavas) - 1 - ppm_cavas_getfont_height(pcavas) - 5, color_metric, buf1);
     // draw line:
     for (i = 0; i < (char_wx + 2*PPM_FNT_BORDER) * pic_xnum; i ++) {
         ppm_cavas_pixel (pcavas, i + PPM_OFF_X, 0, color_metric);
@@ -534,7 +534,7 @@ bdf2c_fontpic_draw_metric ()
         ppm_cavas_drawstring (pcavas
             , char_wx/2 + PPM_FNT_BORDER + i + PPM_OFF_X - ppm_cavas_getfont_width(pcavas)
             , 4
-            , color_metric, color_background, buf1);
+            , color_metric, buf1);
     }
     ppm_bitblit_from (&fd, pcavas, 0, PPM_OFF_Y + (char_hy + 2*PPM_FNT_BORDER) * pic_ynum, 0, 0, pcavas->xmax, pcavas->ymax);
 
@@ -554,7 +554,7 @@ bdf2c_fontpic_draw_metric ()
         ppm_cavas_drawstring (pcavas
             , char_wx / 2 + PPM_FNT_BORDER + i + PPM_OFF_X - ppm_cavas_getfont_width(pcavas)
             , PPM_OFF_Y - 3 - ppm_cavas_getfont_height(pcavas) - 1
-            , color_metric, color_background, buf1);
+            , color_metric, buf1);
     }
     ppm_bitblit_from (&fd, pcavas, 0, 0, 0, 0, pcavas->xmax, pcavas->ymax);
 
@@ -581,7 +581,7 @@ bdf2c_fontpic_draw_metric ()
         ppm_cavas_drawstring (pcavas
             , 4
             , char_hy / 2 + PPM_FNT_BORDER + i + PPM_OFF_Y - ppm_cavas_getfont_height(pcavas)/2 - 1
-            , color_metric, color_background, buf1);
+            , color_metric, buf1);
     }
     ppm_bitblit_from (&fd, pcavas, PPM_OFF_X + (char_wx + 2*PPM_FNT_BORDER) * pic_xnum, 0, 0, 0, pcavas->xmax, pcavas->ymax);
 
@@ -601,7 +601,7 @@ bdf2c_fontpic_draw_metric ()
         ppm_cavas_drawstring (pcavas
             , PPM_OFF_X - 3 - (ppm_cavas_getfont_width(pcavas) + 1) * 2
             , char_hy / 2 + PPM_FNT_BORDER + i + PPM_OFF_Y - ppm_cavas_getfont_height(pcavas)/2 - 1
-            , color_metric, color_background, buf1);
+            , color_metric, buf1);
 
     }
     ppm_bitblit_from (&fd, pcavas, 0, 0, 0, 0, pcavas->xmax, pcavas->ymax);
@@ -634,7 +634,6 @@ bdf2c_fontpic_add_cavas (ppm_cavas_t * pchbuf, size_t width, size_t height, int 
     x += PPM_OFF_X;
     y += PPM_OFF_Y;
 
-#define UNUSED_VARIABLE(a) ((void)(a))
 #if (PPM_FNT_BORDER > 0)
 {
     uint8_t * color1;
@@ -692,7 +691,7 @@ void
 bdf2c_fontpic_add_fntchar (unsigned char c, char flag_shifted)
 {
     ppm_cavas_fill (chbuf, color_background);
-    if (0 != ppm_cavas_fontdraw (chbuf, PPM_FNT_BORDER, PPM_FNT_BORDER, color_dot, color_background, c)) {
+    if (0 != ppm_cavas_fontdraw (chbuf, PPM_FNT_BORDER, PPM_FNT_BORDER, color_dot, c)) {
         size_t width = ppm_cavas_width(chbuf);
         size_t height = ppm_cavas_height(chbuf);
         if (PPM_FNT_BORDER + width / 2 < 8) {
@@ -834,20 +833,22 @@ test_ppm3(int shift)
     }
     bdf2c_fontpic_clear ();
     */
+    //GENERATE_FONTDATA_TEST (g_fontdata_8x12_smallfont);
+    GENERATE_FONTDATA_TEST (g_fontdata_16x16_bigfont);
 
-    GENERATE_FONTDATA_TEST (g_font5x8_0);
-    GENERATE_FONTDATA_TEST (g_font6x8_0);
-    GENERATE_FONTDATA_TEST (g_fontdata_4x6_tiny);
+    //GENERATE_FONTDATA_TEST (g_font5x8_0);
+    //GENERATE_FONTDATA_TEST (g_font6x8_0);
+    //GENERATE_FONTDATA_TEST (g_fontdata_4x6_tiny);
     GENERATE_FONTDATA_TEST (g_fontdata_8x16);
 
-    GENERATE_FONTDATA_TEST (g_fontdata_32x50_sevendigit);
+    //GENERATE_FONTDATA_TEST (g_fontdata_32x50_sevendigit);
 
-    GENERATE_FONTDATA_TEST (g_fontdata_16x24digits);
-    GENERATE_FONTDATA_TEST (g_fontdata_big_digits);
-    GENERATE_FONTDATA_TEST (g_fontdata_medium_digits);
-    GENERATE_FONTDATA_TEST (g_font5x8_1);
-    GENERATE_FONTDATA_TEST (g_font5x8_2);
-    GENERATE_FONTDATA_TEST (g_fontdata_6x8_small);
+    //GENERATE_FONTDATA_TEST (g_fontdata_16x24digits);
+    //GENERATE_FONTDATA_TEST (g_fontdata_big_digits);
+    //GENERATE_FONTDATA_TEST (g_fontdata_medium_digits);
+    //GENERATE_FONTDATA_TEST (g_font5x8_1);
+    //GENERATE_FONTDATA_TEST (g_font5x8_2);
+    //GENERATE_FONTDATA_TEST (g_fontdata_6x8_small);
 }
 
 
@@ -858,7 +859,7 @@ test_set_hz(ppm_cavas_t *pcavas, size_t offx, size_t offy)
     DumpCharacter2Cavas (pcavas, offx, offy, bitmaphz, 16, 16, color_dot, color_background);
 
     sprintf ((char *)buf1, "ABCabc0123: %02X", 391);
-    ppm_cavas_drawstring (pcavas, offx + 16, offy, color_shift, color_background, buf1);
+    ppm_cavas_drawstring (pcavas, offx + 16, offy, color_shift, buf1);
 }
 
 #define MAXX 1024
@@ -873,7 +874,7 @@ test_ppm1()
     ppm_cavas_t * buffer;
     ppm_file_t * pfile = &fd;
 
-    if (0 != ppm_create (pfile, "test1.ppm", MAXX, MAXY, 255)) {
+    if (0 != ppm_init_new (pfile, "test1.ppm", MAXX, MAXY, 255)) {
         printf ("error in create ppm file tmp.ppm\n");
         return;
     }

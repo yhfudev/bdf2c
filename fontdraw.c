@@ -43,7 +43,6 @@ struct _ppmcavas_fontdraw_info_t {
     int offx;
     int offy;
     uint8_t * color_front;
-    uint8_t * color_background;
 };
 
 void
@@ -52,25 +51,22 @@ fontdata_cb_draw_ppmcavas (void *userdata, int x, int y, char is_dot)
     struct _ppmcavas_fontdraw_info_t *pdata = userdata;
     if (is_dot) {
         ppm_cavas_pixel (pdata->pppm, pdata->offx + x, pdata->offy + y, pdata->color_front);
-    } else {
-        ppm_cavas_pixel (pdata->pppm, pdata->offx + x, pdata->offy + y, pdata->color_background);
     }
 }
 
 int
-ppm_cavas_fontdraw (ppm_cavas_t * pppm, size_t x, size_t y, uint8_t color_front[4], uint8_t color_background[4], unsigned char c)
+ppm_cavas_fontdraw (ppm_cavas_t * pppm, size_t x, size_t y, uint8_t color_front[4], unsigned char c)
 {
     struct _ppmcavas_fontdraw_info_t pcfdi;
     pcfdi.pppm = pppm;
     pcfdi.offx = x;
     pcfdi.offy = y;
     pcfdi.color_front = color_front;
-    pcfdi.color_background = color_background;
     return fontdata_draw ((fontdata_t *)pppm->fontptr, c, &pcfdi, fontdata_cb_draw_ppmcavas);
 }
 
 int
-ppm_cavas_drawstring (ppm_cavas_t * pppm, size_t x, size_t y, uint8_t color_front[4], uint8_t color_background[4], unsigned char * msg)
+ppm_cavas_drawstring (ppm_cavas_t * pppm, size_t x, size_t y, uint8_t color_front[4], unsigned char * msg)
 {
     int i;
     int sz = strlen ((char *)msg);
@@ -79,7 +75,7 @@ ppm_cavas_drawstring (ppm_cavas_t * pppm, size_t x, size_t y, uint8_t color_fron
     assert (NULL != pppm->fontptr);
 
     for (i = 0; i < sz; i ++) {
-        ppm_cavas_fontdraw (pppm, x + (fontdata_get_width(pppm->fontptr) + 1) * i, y, color_front, color_background, msg[i]);
+        ppm_cavas_fontdraw (pppm, x + (fontdata_get_width(pppm->fontptr) + 1) * i, y, color_front, msg[i]);
     }
     return 0;
 }

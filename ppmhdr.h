@@ -15,6 +15,8 @@
 
 #include "fontdata.h"
 
+#define UNUSED_VARIABLE(a) ((void)(a))
+
 typedef struct _ppm_file_t {
     size_t xmax;
     size_t ymax;
@@ -47,8 +49,8 @@ void ppm_cavas_fill (ppm_cavas_t * p,  uint8_t color[4]);
 int ppm_cavas_pixel (ppm_cavas_t * pppm, size_t x, size_t y, uint8_t color[4]);
 int ppm_cavas_bitblit (ppm_cavas_t *dest, ppm_cavas_t *src, size_t dx, size_t dy, size_t sx, size_t sy, size_t wx, size_t hy);
 
-int ppm_load (ppm_file_t *fp, const char * filename);
-int ppm_create (ppm_file_t *fp, const char * filename, size_t x, size_t y, size_t depth);
+int ppm_init_load (ppm_file_t *fp, const char * filename);
+int ppm_init_new (ppm_file_t *fp, const char * filename, size_t x, size_t y, size_t depth);
 int ppm_close (ppm_file_t *fp);
 int ppm_bitblit_from (ppm_file_t *fp_dest, ppm_cavas_t *src, size_t dx, size_t dy, size_t sx, size_t sy, size_t wx, size_t hy);
 int ppm_bitblit_to (ppm_cavas_t *dest, ppm_file_t *fp_src, size_t dx, size_t dy, size_t sx, size_t sy, size_t wx, size_t hy);

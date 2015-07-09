@@ -745,6 +745,9 @@ void PrintUsage(void)
 {
     printf("Usage: bdf2c [OPTIONs]\n"
 	"\t-h or -?\tPrints this short page on stdout\n"
+	"\t-i\tinput bdf file name\n"
+	"\t-o\toutput C file name\n"
+	"\t-p\toutput PPM file name\n"
 	"\t-b\tRead bdf file from stdin, write to stdout\n"
 	"\t-c\tCreate font header on stdout\n"
 	"\t-C file\tCreate font header file\n"

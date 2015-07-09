@@ -15,7 +15,7 @@
 int ppm_cavas_getfont_width (ppm_cavas_t * pppm);
 int ppm_cavas_getfont_height (ppm_cavas_t * pppm);
 int ppm_cavas_setfont (ppm_cavas_t * pppm, fontdata_t * fntptr);
-int ppm_cavas_fontdraw (ppm_cavas_t * pppm, size_t x, size_t y, uint8_t color_front[4], uint8_t color_background[4], unsigned char c);
-int ppm_cavas_drawstring (ppm_cavas_t * pppm, size_t x, size_t y, uint8_t color_front[4], uint8_t color_background[4], unsigned char * msg);
+int ppm_cavas_fontdraw (ppm_cavas_t * pppm, size_t x, size_t y, uint8_t color_front[4], unsigned char c);
+int ppm_cavas_drawstring (ppm_cavas_t * pppm, size_t x, size_t y, uint8_t color_front[4], unsigned char * msg);
 
 #endif
